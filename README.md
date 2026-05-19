@@ -3,8 +3,65 @@
 A cross-platform CLI tool that simplifies Let's Encrypt certificate management for users of all skill levels.
 Lecert adapts its interface to three interaction modes (novice, standard, expert) so that both first-time users and seasoned sysadmins can obtain, renew, and revoke TLS certificates without friction.
 
+## What is This and Why Do I Need It?
+
+### The Problem in Plain Language
+
+When you visit a website and see the padlock icon in your browser's address bar, that means the connection between your computer and the website is encrypted. Nobody can spy on what you type (passwords, credit card numbers) or tamper with the page content. This protection is provided by a **TLS certificate** — a small digital file that proves the website is who it claims to be.
+
+If you run your own website, blog, API, or any internet-facing service, you need a TLS certificate. Without one, browsers will show a scary "Not Secure" warning to your visitors, search engines will rank you lower, and sensitive data travels in the open.
+
+### What is Let's Encrypt?
+
+[Let's Encrypt](https://letsencrypt.org/) is a free, nonprofit Certificate Authority that issues TLS certificates at no cost. Before Let's Encrypt existed (2015), certificates cost money and required manual paperwork. Now anyone can get one for free — but the process still involves technical steps that can be intimidating.
+
+### What Does Lecert Do?
+
+Lecert is a command-line tool that handles the entire certificate lifecycle for you:
+
+1. **Obtain** — Proves you own a domain and gets a certificate from Let's Encrypt
+2. **Renew** — Automatically refreshes your certificate before it expires (they last 90 days)
+3. **Revoke** — Invalidates a certificate if your server is compromised or you lose control of the domain
+
+### Do I Need This?
+
+You need Lecert (or a similar tool) if any of these apply:
+
+- You host a website, app, or API on your own server
+- You see "Not Secure" warnings when visiting your site
+- Your current certificate expired and you need a new one
+- You want HTTPS but don't want to pay for certificates
+- You manage multiple domains and want one tool to handle them all
+
+You do NOT need this if:
+
+- You use a hosting provider that handles certificates automatically (Vercel, Netlify, Heroku)
+- You already use Caddy (which has built-in automatic HTTPS)
+- Your site is purely local/internal with no internet exposure
+
+### How Does Domain Verification Work?
+
+Let's Encrypt needs proof that you actually own the domain before issuing a certificate. This prevents someone from getting a certificate for a domain they don't control. There are two common methods:
+
+**HTTP Challenge (recommended for beginners):** Let's Encrypt asks your server to place a specific file at a specific URL. If your server can respond correctly, it proves you control the domain. This requires port 80 to be open on your server.
+
+**DNS Challenge (for advanced setups):** Instead of placing a file on your server, you add a specific DNS record to your domain's configuration. This is useful when port 80 is blocked, when you use a CDN, or when you need certificates for internal servers that aren't directly reachable from the internet.
+
+### Choosing Your Comfort Level
+
+Lecert offers three modes because people have different experience levels:
+
+| If you are... | Use this mode | What it feels like |
+|---------------|---------------|--------------------|
+| New to servers and certificates | `--mode novice` | A friendly wizard that asks 3 simple questions |
+| Comfortable with command-line tools | `--mode standard` (default) | Familiar flag-based interface like other CLI tools |
+| A sysadmin who wants full control | `obtain-expert` command | Every ACME protocol option exposed, nothing hidden |
+
+You can always start with novice mode and graduate to standard or expert as you gain confidence. The certificates produced are identical regardless of which mode you use.
+
 ## Table of Contents
 
+- [What is This and Why Do I Need It?](#what-is-this-and-why-do-i-need-it)
 - [Features](#features)
 - [Installation](#installation)
 - [Quick Start](#quick-start)
@@ -17,6 +74,8 @@ Lecert adapts its interface to three interaction modes (novice, standard, expert
 - [Development](#development)
 - [Testing](#testing)
 - [Contributing](#contributing)
+- [Frequently Asked Questions](#frequently-asked-questions)
+- [Glossary](#glossary)
 - [Security](#security)
 - [License](#license)
 - [Changelog](#changelog)
@@ -332,6 +391,85 @@ Please read [CONTRIBUTING.md](CONTRIBUTING.md) for details on our code of conduc
 4. Commit your changes following [Conventional Commits](https://www.conventionalcommits.org/)
 5. Push to the branch (`git push origin feature/amazing-feature`)
 6. Open a Pull Request
+
+## Frequently Asked Questions
+
+### I'm a complete beginner. Will this break my server?
+
+No. Lecert never modifies your web server configuration (Nginx, Apache, etc.). It only obtains certificate files and stores them in a folder. You still need to configure your web server to use those files, but Lecert cannot accidentally break anything already running.
+
+If you use `--staging` mode, the certificates produced are not trusted by browsers but are otherwise identical — this lets you practice the entire flow without any risk or rate limiting.
+
+### What if my certificate expires?
+
+Let's Encrypt certificates are valid for 90 days. Lecert's `schedule install` command sets up automatic renewal that checks daily and renews any certificate expiring within 30 days. If you forget to set up auto-renewal, your site will show a browser warning after 90 days, but nothing is permanently broken — just run `lecert cert renew --domain yourdomain.com` to fix it.
+
+### Do I need to be root/administrator?
+
+Not usually. Lecert stores certificates in your home directory (`~/.lecert/certs/`) and uses an unprivileged HTTP server on port 5002 for challenges. The only case where root might be needed is if you want to use port 80 directly for HTTP challenges (ports below 1024 require elevated privileges on most systems). The recommended approach is to use a reverse proxy or port forwarding instead.
+
+### Can I use this with Nginx/Apache/Caddy?
+
+Yes. Lecert produces standard PEM files (`cert.pem` and `key.pem`). Point your web server configuration at these files:
+
+```nginx
+# Nginx example
+ssl_certificate     /home/you/.lecert/certs/yourdomain.com/cert.pem;
+ssl_certificate_key /home/you/.lecert/certs/yourdomain.com/key.pem;
+```
+
+```apache
+# Apache example
+SSLCertificateFile    /home/you/.lecert/certs/yourdomain.com/cert.pem
+SSLCertificateKeyFile /home/you/.lecert/certs/yourdomain.com/key.pem
+```
+
+After renewal, reload your web server to pick up the new certificate (`systemctl reload nginx`).
+
+### What's the difference between HTTP and DNS challenges?
+
+| Aspect | HTTP Challenge | DNS Challenge |
+|--------|---------------|---------------|
+| Requires | Port 80 open on your server | Access to your DNS provider's API |
+| Works for | Servers directly reachable from the internet | Any domain, even behind firewalls |
+| Difficulty | Easier (just open a port) | Slightly more complex (requires API token setup) |
+| Best for | Simple single-server setups | CDN users, internal servers, complex architectures |
+
+If you're not sure, start with HTTP. You can always switch to DNS later.
+
+### I got a rate limit error. What do I do?
+
+Let's Encrypt limits certificate issuance to 5 per domain per week in production. If you're testing or learning, always use `--staging` to avoid hitting these limits. Staging has much higher limits and is designed for experimentation. Once your setup works with staging, remove the `--staging` flag to get a real certificate.
+
+### How is this different from Certbot?
+
+Certbot is the official Let's Encrypt client maintained by the EFF. It's excellent but oriented toward system administrators. Lecert differs in several ways:
+
+- **Single binary** — no Python dependencies, no pip, no virtualenv
+- **Novice mode** — a guided wizard that asks 3 questions instead of requiring you to know flags
+- **Cross-platform** — same binary works on Linux, macOS, and Windows
+- **Does not touch your web server** — Certbot can auto-configure Nginx/Apache, which is convenient but can also break configurations. Lecert only produces files.
+- **Lighter scope** — Lecert does one thing (certificate lifecycle) and leaves server configuration to you
+
+Both tools produce the same certificates from the same Let's Encrypt infrastructure.
+
+## Glossary
+
+Terms you might encounter when working with certificates:
+
+| Term | Meaning |
+|------|---------|
+| **TLS** | Transport Layer Security — the protocol that encrypts web traffic (successor to SSL) |
+| **Certificate** | A digital file that proves a server's identity and enables encrypted connections |
+| **Private key** | A secret file that only your server should have — never share it |
+| **Certificate Authority (CA)** | An organization trusted to issue certificates (Let's Encrypt is a CA) |
+| **ACME** | Automatic Certificate Management Environment — the protocol Let's Encrypt uses |
+| **Domain** | Your website's address (e.g. `example.com`) |
+| **Challenge** | A test that proves you control a domain before a certificate is issued |
+| **PEM** | A file format for certificates and keys (the `.pem` files Lecert produces) |
+| **Renewal** | Getting a fresh certificate before the current one expires |
+| **Revocation** | Invalidating a certificate (e.g. if your server was compromised) |
+| **Staging** | A test environment that issues fake certificates for practice |
 
 ## Security
 
