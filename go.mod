@@ -1,6 +1,6 @@
 module github.com/valorisa/lecert
 
-go 1.22
+go 1.24
 
 require (
 	github.com/go-acme/lego/v4 v4.35.2
