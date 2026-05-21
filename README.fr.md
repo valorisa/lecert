@@ -1,3 +1,9 @@
+<div align="right">
+
+[🇬🇧 English](README.md)
+
+</div>
+
 # Lecert
 
 [![CI](https://github.com/valorisa/lecert/actions/workflows/ci.yml/badge.svg)](https://github.com/valorisa/lecert/actions/workflows/ci.yml)
