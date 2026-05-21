@@ -1,4 +1,4 @@
-# Lecert
+# LeCert
 
 [![CI](https://github.com/valorisa/lecert/actions/workflows/ci.yml/badge.svg)](https://github.com/valorisa/lecert/actions/workflows/ci.yml)
 [![Lint](https://github.com/valorisa/lecert/actions/workflows/lint.yml/badge.svg)](https://github.com/valorisa/lecert/actions/workflows/lint.yml)
