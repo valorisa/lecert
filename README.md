@@ -1,9 +1,3 @@
-<div align="right">
-
-[🇫🇷 Français](README.fr.md)
-
-</div>
-
 # LeCert
 
 [![CI](https://github.com/valorisa/lecert/actions/workflows/ci.yml/badge.svg)](https://github.com/valorisa/lecert/actions/workflows/ci.yml)
@@ -13,6 +7,8 @@
 [![License](https://img.shields.io/github/license/valorisa/lecert)](https://github.com/valorisa/lecert/blob/main/LICENSE)
 [![Release](https://img.shields.io/github/v/release/valorisa/lecert?include_prereleases)](https://github.com/valorisa/lecert/releases)
 [![Platform](https://img.shields.io/badge/platform-linux%20%7C%20macos%20%7C%20windows-brightgreen)](https://github.com/valorisa/lecert#installation)
+
+[🇫🇷 Français](README.fr.md)
 
 A cross-platform CLI tool that simplifies Let's Encrypt certificate management for users of all skill levels.
 Lecert adapts its interface to three interaction modes (novice, standard, expert) so that both first-time users and seasoned sysadmins can obtain, renew, and revoke TLS certificates without friction.
