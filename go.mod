@@ -3,7 +3,7 @@ module github.com/valorisa/lecert
 go 1.24
 
 require (
-	github.com/go-acme/lego/v4 v4.35.2
+	github.com/go-acme/lego/v4 v4.33.0
 	github.com/spf13/cobra v1.10.2
 )
 
